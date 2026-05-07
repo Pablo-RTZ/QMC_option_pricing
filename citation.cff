@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: QMC Option Pricing
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Pablo
+    family-names: Ortiz Badenes
+repository-code: 'https://github.com/Pablo-RTZ/QMC_option_pricing'
+abstract: >-
+  A repository on the implementation of QMC option pricing
+  techniques under Black Scholes.
+license: GPL-3.0-or-later
