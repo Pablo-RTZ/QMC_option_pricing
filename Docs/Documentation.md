@@ -6,7 +6,7 @@ This repository is meant mostly as a learning project on low discrepancy samplin
 
 The goal is to provide an incremental approach, starting from the analytical solution to the Black-Scholes model, as well as its Monte Carlo comptutational implementation, to then extend it to various Quasi Monte Carlo techniques, as well as variance reduction and importance sampling techniques. Further along, the hypothesis and assumptions of Black Scholes will be changed and made more strict, to get more complex, but more realistic, models.
 
-Most of the Python implementations will use the functions given by the NumPy and SciPy modules, due to their stability and speed. Nonetheless, the reasoning behind the techniques here used are applicable to any language, as well as implementations from scratch.
+Most of the Python implementations will use the functions given by the NumPy and SciPy modules, due to their stability and speed. Nonetheless, the reasoning behind the techniques here used are applicable to any language, as well as implementations from scratch. Unless otherwise stated, rounding error, as well as error atributed to the NumPy functions (number generation not being perfectly random or normal, inverse cdf having slight error,...) will be neglected, so exact values found through closed form solutions will be considered perfectly exact, and inconsistencies will not be atributed to machine precision. This is clearly an assumption, but generally, the magnitude of error will be considerably bigger than machine precision, making this assumption valid.
 
 ## Introduction
 
@@ -58,7 +58,9 @@ This benchmark function is implemented inside the `Benchmark.py` file, under the
 
 One of the assumptions for Black-Scholes is that stock prices follow Geometric Brownian Movement. Thus, given the same parameters as the previous model, one could simulate several possible paths for the stocks, and decide at maturity, given the stock price and strike price, wether or not it will be profitable to execute the option, as well as the payoff. Taking into consideration the depreciation of assets due to the risk free interest rate, one can aproximate the fair price for an option. The additional parameter needed to impelment this procedure is the number of iterations, this is, the number of stock paths simulated.
 
-When normally distributed random numbers are used, it is called Monte Carlo simulation, and it is the simplest computational implementation of Black-Scholes. This function is implemented inside `MC_BlackScholes.py` as `european_call_mc(S0, K, T, r, sigma, n)`. This file also contains the Monte Carlo expected return, `expected_profit_mc( S0, K, T, r, sigma, option_price, n)`, which, using the same logic, takes option price as an input, simulates $n$ stock prices, and returns the expected profit over $n$ iterations.
+When normally distributed random numbers are used, it is called Monte Carlo simulation, and it is the simplest computational implementation of Black-Scholes. This function is implemented inside `MC_BlackScholes.py` as `european_call_mc(S0, K, T, r, sigma, n)`. The program returns the calculated value for the option price. This file also contains the Monte Carlo expected return, `expected_profit_mc( S0, K, T, r, sigma, option_price, n)`, which, using the same logic, takes option price as an input, simulates $n$ stock prices, and returns the expected profit over $n$ iterations.
+
+By default, the programs run a single time, but and aditional argument `exp` can be added to run various experiments with the same parameters, and return a vector of experiments. Vectorizing the program twice (samples and experiments) is faster that using for loops for experiments, as numpy runs on C, so making less calls to the Python interpreter, while inputing bigger matrices (rather than vectors) is faster. However, for really big batches, RAM will become a limitation faster with this double vectorization, as the whole matrix will be bigger than running each vector separately.
 
 For values close to the ones given by `european_cal_mc`, it will return values close to 0, as the option price obtained is the fair price. For lower option prices, expected values will generally be positive, and for higher option prices, they will generally be negative.
 
@@ -70,4 +72,58 @@ $$
 \lim_n |\bar x-x_n|=0
 $$
 
-Thus, the Monte Carlo method will provide increasingly good aproximations. Nonetheless, the rate of convergence will be of the order of $\frac{1}{\sqrt{n}}$, so the method has an order of convergence $\mathcal{O}(n^{-\frac12})$.
+Thus, the Monte Carlo method will provide increasingly good aproximations. Nonetheless, the rate of convergence will be of the order of $\frac{1}{\sqrt{n}}$, so the method has an order of convergence $\mathcal{O}(n^{-\frac12})$. Let
+
+$$
+E_n\equiv |\bar{x}-x_n|=\frac{C}{\sqrt{n}}
+$$
+
+for some value of $C\in\mathbb{R}$. Then, $\log E_n=-\frac12\log n+\log C$. Therefore, the log-log plot of the error versus the sample size should be linear. For some given parameters (detailed in `MonteCarlo_Convergence.ipynb`), the Monte Carlo error rate is represented for certain values of $N$ (sample size), taking the average over 100 experiments. The 95% confidence interval bars are also shown.
+
+![Monte Carlo Convergence rate](/Assets/MC_Convergence.png)
+
+Additionally, the three defining metrics that will be used on these methods can be introduced. These are the Bias, variance and RMSE (root mean squared error).
+
+**Bias** measures the **systematic error** introduced by approximating a real-world problem with a simplified model. It reflects how far the average prediction is from the true value.
+
+$$
+\text{Bias}(x) = \mathbb{E}[x] - \bar x
+$$
+
+**Variance** measures how much the model’s predictions **fluctuate** when trained on different datasets. It reflects model sensitivity to data noise.
+
+$$
+\text{Variance}(x) = \mathbb{E}\big[(x - \mathbb{E}[x])^2\big]
+$$
+
+**RMSE** measures the **average magnitude of prediction errors**, giving higher weight to large errors. It combines both bias and variance effects.
+
+$$
+\text{RMSE} = \sqrt{\mathbb{E}\big[(\hat{x} - y)^2\big]}
+$$
+
+Generally,
+
+- High bias → model is too simple (underfitting)
+- Low bias → model closely captures the true relationship
+- High variance → model is too complex (overfitting)
+- Low variance → model is more stable across datasets
+- Lower RMSE → better predictive accuracy (has the same units as the predicted magnitude)
+
+Due to the fact that $\text{RMSE}^2\approx\text{Variance} + \text{Bias}^2$, generally $\text{Bias}^2$ will be plotted over $\text{Bias}$.
+
+For this implementation using Monte Carlo simulation, these are the results obtanied, as well as its fitting lines
+
+![Monte Carlo performance metrics](/Assets/MC_metrics.png)
+
+*(note how $\text{Bias}^2$ fits to $1/n$, as $E_n\approx1/\sqrt{n}$)*
+
+## Antithethic variates
+
+Once the baseline Monte Carlo implementation is done and tested, the object of this repository can be expanded on. The goal now is to test various techniques that can be used to obtain Quasi Monte Carlo (QMC) simulations that reduce the variance over plain Monte Carlo, leading to better results on smaller sample sizes. The first one that will be implemented is the use of antithetic variates. The idea behind it is to generate a sample size $Z$ of $\frac n2$ samples instead of $n$, but simulate both the $Z$ and $-Z$ paths. This reduces the computational cost of the sample generation, and can noticeably reduce bias and variance on well behaved problems. However, it can break independence of samples, and distort estimates on certain problems. It is implemented as `european_call_at(S0, K, T, r, sigma, n)`, also having `exp` as an additional argument. With the same values as before, the metrics for antithetic variates are found. However, instead of assuming $\frac{C}{\sqrt n}$ or $\frac Cn$ for convergence, the least squares aproximation for the log-log plot is found (using an auxiliary function).
+
+![Antithetic variates performance metrics](/Assets/AT_metrics.png)
+
+Furthermore, the computation time and variance of Monte Carlo and antithetic variates can be compared. As expected, antithetic variates reduces both the variance and computation time.
+
+![Antithetic variates vs Monte Carlo](/Assets/MC_AT.png)

@@ -2,6 +2,10 @@
 
 This repository is meant mostly as a learning project on low discrepancy sampling and importance sampling, as well as its computational implementation. To apply it to real world scenarios, the classic example of European options pricing under Black-Scholes hypothesis is taken, as it is a fundational benchmark for these methods.
 
+## Quick start
+
+Download or clone the repo, navigate to the directory in the terminal, and run `pip install .` to install the package. This will allow for all the example notebooks to work correctly, which can be explored and modified. Then go to the [documentation](Docs/Documentation.md) to read the writeup for the project.
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 or later (GPL-3.0-or-later).
