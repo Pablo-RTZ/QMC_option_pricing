@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import norm
 
 def european_call_mc(S0, K, T, r, sigma, n, exp=1):
     """
@@ -6,7 +7,8 @@ def european_call_mc(S0, K, T, r, sigma, n, exp=1):
     """
 
     # Generate standard normal random variables
-    Z = np.random.randn(n, exp)
+    Z = np.random.rand(n, exp)
+    Z = norm.ppf(Z)
 
     # Simulate terminal stock prices
     ST = S0 * np.exp(
