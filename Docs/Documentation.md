@@ -31,6 +31,7 @@ d_1 = \frac{ \ln\left(\frac{S_0}{K}\right) + \left(r + \frac{1}{2}\sigma^2\right
 $$
 
 and
+
 $$
 d_2 = d_1 - \sigma \sqrt{T}
 $$
@@ -80,7 +81,7 @@ $$
 
 for some value of $C\in\mathbb{R}$. Then, $\log E_n=-\frac12\log n+\log C$. Therefore, the log-log plot of the error versus the sample size should be linear. For some given parameters (detailed in `MonteCarlo_Convergence.ipynb`), the Monte Carlo error rate is represented for certain values of $N$ (sample size), taking the average over 100 experiments. The 95% confidence interval bars are also shown.
 
-![Monte Carlo Convergence rate](/Assets/MC_Convergence.png)
+![Monte Carlo Convergence rate](/Assets/MC_convergence.png)
 
 Additionally, the three defining metrics that will be used on these methods can be introduced. These are the Bias, variance and RMSE (root mean squared error).
 
@@ -116,7 +117,7 @@ For this implementation using Monte Carlo simulation, these are the results obta
 
 ![Monte Carlo performance metrics](/Assets/MC_metrics.png)
 
-*(note how $\text{Bias}^2$ fits to $1/n$, as $E_n\approx1/\sqrt{n}$)*
+(note how $\text{Bias}^2$ fits to $1/n$, as $E_n\approx1/\sqrt{n}$)
 
 ## Antithethic variates
 
@@ -163,6 +164,7 @@ $$
 $$
 
 where
+
 $$
 n = \sum_{k=0}^{L-1} d_k(n) \, b^k
 $$
@@ -194,14 +196,40 @@ These methods are implemented as `Kronecker(m,n)`, `Halton(m,n)` and `Sobol(m,n)
 
 These low discrepancy sequences can be applied to the Black Scholes simulation used on previous sections, and when tested on the same parameters, a clear reduction in variance (both absolute and variance reduction rate) can be seen. The test results are the following
 
-![Kronecker sampling metrics](/Assets/kron_metrics.png)
+![Kronecker sampling metrics](/Assets/Kron_metrics.png)
 
-![Halton sampling metrics](/Assets/halton_metrics.png)
+![Halton sampling metrics](/Assets/Halton_metrics.png)
 
-![Sobol sampling metrics](/Assets/sobol_metrics.png)
+![Sobol sampling metrics](/Assets/Sobol_metrics.png)
 
 These methdods show a variance rate of $\mathcal O(n^{-\alpha})$, being $\alpha$ between 1.5 and 2, compared to the value of 1 found for antithetic variates and stratified sampling. Due to Sobol being the best performing sequence out of the three candidates, it can be tested against stratified sampling, the previous best performing method.
 
 ![Sobol vs Stratified sampling](/Assets/Sobol_SS.png)
 
-As it can be seen on the plot (more plots can be found in `QMC_Convergence.ipynb`), Sobol sequences have a higher computational cost over stratified sampling across the board. However, the faster assymptotic variance reduction rate of Sobol sequences make up for the differences for bigger sample sets, making it theoretically more suitable for real world applications.
+As it can be seen on the plot (more plots can be found in `QMC_Convergence.ipynb`), Sobol sequences have a higher computational cost over stratified sampling across the board. However, the faster asymptotic variance reduction rate of Sobol sequences make up for the differences for bigger sample sets, making it theoretically more suitable for real world applications.
+
+## Importance sampling
+
+One of the the main limitations of the mehtods previously shown is that it correlates the regions with the highest probability to the ones with the highest payout. For strike prices $K$ close to the stock price $S_0$, a high portion of all estimated terminal prices will provide a payout. However, as the difference between stock price and strike prices grows bigger (either by having $K\ll S_0$ or $K\gg S_0$), an increasingly smaller amount of all simulated paths will return a payout (most will return $0$). This reduction in simulated paths that yield payout will increase the variance, while maintaining the same computational cost. Thus, the current methods are not suitable for extreme situations that would provide high payouts, such as when $K$ is much bigger than $S_0$ (deep in the money).
+
+This mismatch caused by the mayority of the probabilities being close to the original stock price, while the payout only occuring when the stock price passes the strike price, can be solved with importance sampling. All the stock paths between the original stock price and the strike price provide exactly 0 payout (and 0 option price). Thus, instead of using a gaussian distribution with mean 0, the mean can be moved closer to the strike price, and the resulting paths can then be adjusted to account for the low likelyhood of those paths occuring. Bayes's theorem states
+
+$$
+P(A|B)=\frac{P(B|A)P(B)}{P(A)}
+$$
+
+In this context, the zero mean gaussian can be calculated using a mean shifted gaussian, and a likelyhood function to adjust the weight. Let $p(x)=N(0,1)$, when sampling from $q(x)=N(a,1)$, a function $L(x)$ is needed such that $p(x)=q(x)L(x)$. Substituting in the expressions for the gaussian distribution,
+
+$$
+\frac{1}{\sqrt{2\pi}}e^{-x^2/2}=L(x)\frac{1}{\sqrt{2\pi}}e^{-(x-a)^2/2}\implies L(x)=e^{-ax+a^2/2}
+$$
+
+This can be easily implemented onto the Monte Carlo Black Scholes programs (as well as any of the QMC variants). For simplicity's sake, it will be implemented in and tested against base Monte Carlo. It is implemented as `european_call_is(S0, K, T, r, sigma, a, n, exp)`, and tested more thoroughly on `IS_Convergence.ipynb`. The main findings are that error is reduced, but more notably that variance can be greatly reduced. Furthermore, if strike prices sufficiently high were chosen, standard Monte Carlo might fail to get even one sample into the payout region, incorrectly returning both 0 for the price and variance. This gaussian mean shift eliminates that chance. The variance can be compared against the distance to the strike price.
+
+![Monte Carlo vs Importance Sampling variance](/Assets/MC_IS.png)
+
+The plot shows both variances decreasing, with Importance sampling having smaller variances. However, this reduction in both variances is due to the option price also getting smaller. If $\frac{\text{Variance}}{\text{Price}^2}$ is plotted instead (relative variance, square used so units match), the true benefit of importance sampling can be seen.
+
+![Monte Carlo vs Importance Sampling relative variance](/Assets/MC_IS_rel.png)
+
+This plot clearly shows how Importance sampling allows for relative variance to remain more or less constant despite rare events, while Monte Carlo's variance collapses.

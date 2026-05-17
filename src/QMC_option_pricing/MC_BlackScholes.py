@@ -24,7 +24,6 @@ def european_call_mc(S0, K, T, r, sigma, n, exp=1):
     
     return price
 
-
 def expected_profit_mc( S0, K, T, r, sigma, option_price, n, exp=1):
     """
     Monte Carlo estimated profit of a European call option under Black-Scholes (risk neutral).
