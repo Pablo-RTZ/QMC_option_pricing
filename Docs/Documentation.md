@@ -233,3 +233,34 @@ The plot shows both variances decreasing, with Importance sampling having smalle
 ![Monte Carlo vs Importance Sampling relative variance](/Assets/MC_IS_rel.png)
 
 This plot clearly shows how Importance sampling allows for relative variance to remain more or less constant despite rare events, while Monte Carlo's variance collapses.
+
+### Cross Entropy importance sampling
+
+One of the main drawbacks of this importance sampling implementation is that it relies heavily on taking a good estimate for the mean shift. For simple models, such as the santard European Black Scholes option pricing, an estimate can be deduced off the models dynamics, and a closed expression can be derived and proved to be optimal. In this case, the optimal mean shift is
+
+$$
+a^*=\frac{\ln(\frac{K}{S_0})-(r-\frac12\sigma^2)T}{\sigma\sqrt{T}}
+$$
+
+However, for problems where this optimal value cannot be derived analitically, other techniques must be used. The adaptive importance sampling technique that will be explored here is Cross-entropy. Theoretically, a distribution exists, such that variance is exaclty zero for the simulations of the model. Cross-entropy simplifies the problem by restricting it to the family $N(\mu,1),\mu\in\mathbb{R}$, and choosing the closest (according to Kullback-Liebler divergence) element from that familiy. The Kullback-Liebler divergence between a true probability distribution $P$ and a distribution $Q$ is defined as:
+
+$$
+D_{KL}(P||Q)=\sum_{x\in X}P(x)\log\frac{P(x)}{Q(x)}
+$$
+
+Let $H(S_T)$ be the payout associated to a stock price at maturity $S_T$, and $Z\equiv Z(0,1)$. Then, it can be derived (proof is ommited) that the optimal mean shift will satisfy:
+
+$$
+a^*=\frac{\mathbb{E}[H(Z)Z]}{\mathbb{E}[H(Z)]}
+$$
+
+An iterative algorithm to implement this is:
+
+1. Set $a_0=0$
+2. Compute $w_i=H(Z_i)L(Z_i)$
+3. Compute $a_{k+1}=\frac{\sum w_iZ_i}{\sum w_i}$
+4. Repeat using the new mean shift
+
+In this repository's implementation, a damping factor is added to mitigate possible numerical unstability. When compared to the previous naive aproximation for the mean shift, it can be seen that it reduces variance, due to it getting close to the true optimal mean shift. It is noticeably noisier than that naive estimate, due to the realtively low max iterations number used for compute time purposes. However, this shows that, with sufficiently high numbers of samples, experiments and maximum iterations, the Cross-entropy method would converge towards the true optimal mean shift. Furthermore, in problems where no closed form solution exists, it can be a way to provide much more reliable results than blindly estimating.
+
+![Cross-entropy vs Importance sampling relative variance](/Assets/IS_CE_rel.png)
