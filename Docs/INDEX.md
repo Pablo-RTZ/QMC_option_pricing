@@ -14,3 +14,5 @@
     - [Sobol](Documentation.md#sobol)
     - [Numerical Comparison](Documentation.md#numerical-comparison)
   - [Low discrepancy sequences applied to Black-Scholes](Documentation.md#low-discrepancy-sequences-applied-to-blackscholes)
+  - [Importance sampling](Documentation.md#importance-sampling)
+    - [Cross Entropy importance sampling](Documentation.md#cross-entropy-importance-sampling)

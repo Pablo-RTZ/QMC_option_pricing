@@ -264,3 +264,92 @@ An iterative algorithm to implement this is:
 In this repository's implementation, a damping factor is added to mitigate possible numerical unstability. When compared to the previous naive aproximation for the mean shift, it can be seen that it reduces variance, due to it getting close to the true optimal mean shift. It is noticeably noisier than that naive estimate, due to the realtively low max iterations number used for compute time purposes. However, this shows that, with sufficiently high numbers of samples, experiments and maximum iterations, the Cross-entropy method would converge towards the true optimal mean shift. Furthermore, in problems where no closed form solution exists, it can be a way to provide much more reliable results than blindly estimating.
 
 ![Cross-entropy vs Importance sampling relative variance](/Assets/IS_CE_rel.png)
+
+## Path dependent options
+
+This section focuses on path dependent options, which refers to options where the evolution of the stock price has to be computed. This section isn't by no means exhaustive, as this topic is extremely deep and complex. It aims, however, to provide some basic insight on the paradigm changes and structural adaptations needed to move onto path dependent options. The standard Black Scholes assumes, among others, constant volatility. Thus, a single random value can be generated for each sample. In the following methods, volatility will not be constant, but rather follow a stochastic process given by
+
+$$
+\sigma =  \rho  Z + \sqrt{1 - \rho^2} · U,\quad \rho\in[0,1],\quad Z,U\thicksim N(0,1)
+$$
+
+with $Z$ being the stochastic variable that models price changes. The main drawback of path dependent options is the increase in computational cost, due to there being an extra dimension. For $n$ samples and $e$ experiments, the cost of a Monte Carlo Black Scholes computation is $\mathcal O(n·e)$, however, for a path dependent option using $t$ timesteps, the computational cost will be roughly $\mathcal O(n·e·t)$. Thus, variance reduction techniques gain importance, as they can provide similar levels of accuracy with much smaller sample sizes, speeding up computation.
+
+This path dependent model is implemented using Monte Carlo simulation as a baseline, as `path_dependent_mc(S0, K, T, r, rho, timesteps, n, exp)`. When compared to the regular Monte Carlo Black Scholes implementation, it can be noted that variance is much higher, due to the added randomness of volatility following a stochastic process. The assymptotic rate, however, is the same.
+
+![Monte Carlo Black Scholes vs Path Dependent volatility](/Assets/MC_PD.png)
+
+### Antithetic variates
+
+The simplest improvement to Monte Carlo, also for path dependent options, is the use of antithetic variates. By simulating a path and its opposite, the computational cost of number generation is reduced, and variance is also decreased. It is implemented as `path_dependent_at(S0, K, T, r, rho, timesteps, n, exp)`.
+
+![Path dependent MC vs Antithetic variates](/Assets/PD_AT.png)
+
+Note how computation time is also lower, on top of variance being lower.
+
+![Path dependent MC vs Antithetic variates](/Assets/PD_AT_time.png)
+
+### Control variates
+
+Finally, control variates can be briefly explained. Control variates are a really powerful variance reduction technique, where an estimated measure is corrected using a known and easily computable control metric. In this case, the closed form solution for european options under Black Scholes is used to correct the previously described random volatility model. The option price under stochastic volatility will be $X$
+
+$$
+X = e^{-rT}\max(S_T - K, 0)
+$$
+
+So the Monte Carlo estimator is $\mathbb{E}[X]$. A second variable $Y$ (Black Scholes closed form solutions), that is highly correlated with X is introduced, as $\mathbb{E}[Y]$ easy to compute. Thus, the simulated value $X$ is corrected using
+
+$$
+X^{CV} = X - \beta (Y - \mathbb{E}[Y])
+$$
+
+This is mathematically corect because $Y - \mathbb{E}[Y]$ has expectation 0, so the estimator remains unbiased but variance is reduced if $X$ and $Y$ move together. In order to get the parameter $\sigma^2_{\text{eff}}$ with which to run the simulations, the pathwise total variance is used, defined as:
+
+$$
+\sigma_{\text{eff}}^2= \frac{1}{T}\int_0^T \sigma_t^2 dt
+\approx
+\frac{1}{N}\sum_{t=1}^{N} \sigma_t^2 \Delta t
+$$
+
+Using this value, the conditional expectation proxy is calculated. This way, an estimate $Y$ that is structurally similar to X, much less noisy and strongly correlated with $X$ is obtained. This way, the final estimator is:
+
+$$
+\hat{X}
+=
+\frac{1}{n}\sum (X_i - \beta(Y_i - \bar{Y}))
+$$
+
+where:
+
+- $\bar{Y}$ is the sample mean
+- $\beta$ is chosen to minimize variance
+
+Furthermore, $\beta$ will measure:
+
+- If $Y$ tracks $X$ perfectly: large $\beta$, big variance reduction
+- If uncorrelated: $\beta \approx 0$, no benefit.
+
+This is implemented in the repository as `path_dependent_cv(S0, K, T, r, rho, timesteps, n, exp)`. When compared to the previous Monte Carlo implementation, the reduction in variance of the estimator can be seen.
+
+![Path dependent MC vs Control Variates](/Assets/MC_CV.png)
+
+## Final findings
+
+This repository documents some basic methods of simulating events using Monte Carlo techniques, using the Black Scholes model, due to its relevance in quantitative finance. The succesive methods showcase the usefulness of variance reduction techniques, to get orders of magnitude improvements on well behaved problems. The last sections showcase how these methods can be adapted for either extreme situations, as well as more complex models. Path dependent options are only lightly introduced, but the computational complexity increase is noticed. Finally, some comparisons between the various methods can be done, to showcase the improvement over base Monte Carlo. Let efficiency be defined as $E=\frac{1}{\text{Time}·\text{Var}}$, and relative efficiencies (compared to Monte Carlo) be computed. For moderate strike price and volatility estimates, the results are as following.
+
+| Method | Normalized Efficiency |
+| ------ | ---------------------- |
+| Monte Carlo | 1 |
+| Antithetic variates | 3 |
+| Stratified sampling | 170 |
+| Sobol | 335271 |
+
+Note how the big increase for Sobol is due to the smaller variance, coupled with faster assymptotic reduction rate, which makes the difference much bigger as sample size increases. Similarly, when deep ITM estimates are used, the increase obtained by using Importance Sampling can be seen.
+
+| Method | Normalized Efficiency |
+| -------- | ---------------------- |
+| Monte Carlo | 1 |
+| Antithetic variates | 2 |
+| Stratified sampling | 1 |
+| Sobol | 284 |
+| Importance sampling | 2276 |
