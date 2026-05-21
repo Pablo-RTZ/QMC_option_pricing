@@ -18,7 +18,7 @@ The Black–Scholes model relies on several **simplificative hypotheses**. First
 
 ## Black-Scholes model
 
-The Black-Scholes model determines the fair price for an option (premium), in order to assume no expected net gain after its madurity. It works under the aforementioned assumptions. Its mathematical expression is
+The Black-Scholes model determines the fair price for an option (premium), in order to assume no expected net gain after its maturity. It works under the aforementioned assumptions. Its mathematical expression is
 
 $$
 C(S_0, K, T, r, \sigma) = S_0 \Phi(d_1) - K e^{-rT} \Phi(d_2)
@@ -63,7 +63,7 @@ When normally distributed random numbers are used, it is called Monte Carlo simu
 
 By default, the programs run a single time, but and aditional argument `exp` can be added to run various experiments with the same parameters, and return a vector of experiments. Vectorizing the program twice (samples and experiments) is faster that using for loops for experiments, as numpy runs on C, so making less calls to the Python interpreter, while inputing bigger matrices (rather than vectors) is faster. However, for really big batches, RAM will become a limitation faster with this double vectorization, as the whole matrix will be bigger than running each vector separately.
 
-For values close to the ones given by `european_cal_mc`, it will return values close to 0, as the option price obtained is the fair price. For lower option prices, expected values will generally be positive, and for higher option prices, they will generally be negative.
+For values close to the ones given by `european_call_mc`, it will return values close to 0, as the option price obtained is the fair price. For lower option prices, expected values will generally be positive, and for higher option prices, they will generally be negative.
 
 ### Monte Carlo convergence
 

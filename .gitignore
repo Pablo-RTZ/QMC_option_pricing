@@ -26,16 +26,6 @@ dist/
 # PyInstaller
 *.spec
 
-# Testing / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Mypy / type checkers
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
 # Logs
 *.log
 
@@ -45,6 +35,15 @@ Thumbs.db
 
 # IDEs
 .vscode/
+
+# Latex
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+*.lof
+*.lot
 
 # Personal files
 Notes.md

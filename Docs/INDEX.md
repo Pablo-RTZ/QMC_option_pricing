@@ -16,3 +16,7 @@
   - [Low discrepancy sequences applied to Black-Scholes](Documentation.md#low-discrepancy-sequences-applied-to-blackscholes)
   - [Importance sampling](Documentation.md#importance-sampling)
     - [Cross Entropy importance sampling](Documentation.md#cross-entropy-importance-sampling)
+  - [Path dependent options](Documentation.md#path-dependent-options)
+    - [Antithetic variates](Documentation.md#antithetic-variates)
+    - [Control variates](Documentation.md#control-variates)
+  - [Final findings](Documentation.md#final-findings)

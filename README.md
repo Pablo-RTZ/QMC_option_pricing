@@ -29,6 +29,10 @@ This repository contains the following sections
 - Path dependent options
 - Final comparisons
 
+The repository also contains several Jupyter Notebooks, used to generate the graphs throughout the documentation, as well as to test and show the available functions.
+
+The writeup is available in Markdown in the [documentation](/Docs/Documentation.md), or in Latex format, inside the corresponding folder. The Latex is already precompiled as PDF, to make viewing as easy as possible
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 or later (GPL-3.0-or-later).
