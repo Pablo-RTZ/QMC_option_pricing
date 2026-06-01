@@ -335,7 +335,7 @@ $$
 \frac{1}{\sqrt{2\pi}}e^{-x^2/2}=L(x)\frac{1}{\sqrt{2\pi}}e^{-(x-a)^2/2}\implies L(x)=e^{-ax+a^2/2}
 $$
 
-This can be easily implemented onto the Monte Carlo Black Scholes programs (as well as any of the QMC variants). For simplicity's sake, it will be implemented in and tested against base Monte Carlo. It is implemented as \texttt{european\_call\_is(S0, K, T, r, sigma, a, n, exp)}, and tested more thoroughly on \texttt{IS\_Convergence.ipynb}. The main findings are that error is reduced, but more notably that variance can be greatly reduced. Furthermore, if strike prices sufficiently high were chosen, standard Monte Carlo might fail to get even one sample into the payout region, incorrectly returning both 0 for the price and variance. This gaussian mean shift eliminates that chance. The variance can be compared against the distance to the strike price.
+This can be easily implemented onto the Monte Carlo Black Scholes programs (as well as any of the QMC variants). For simplicity's sake, it will be implemented in and tested against base Monte Carlo. It is implemented as \texttt{european\_call\_is(S0, K, T, r, sigma, a, n, exp)}, and tested more thoroughly on \texttt{IS\_Convergence.ipynb}. The shift used must consider the fact that growth is considered to be exponential, and the effect the time and volatility will have. The expression used in this section will be $a=\ln(\frac{K}{S_0})\frac1{\sigma\sqrt{T}}$. When using this expresison, the main findings are that error is reduced, but more notably that variance can be greatly reduced. Furthermore, if strike prices sufficiently high were chosen, standard Monte Carlo might fail to get even one sample into the payout region, incorrectly returning both 0 for the price and variance. This gaussian mean shift eliminates that chance. The variance can be compared against the distance to the strike price.
 
 \begin{figure}[H]
 \centering
@@ -361,7 +361,7 @@ $$
 a^*=\frac{\ln(\frac{K}{S_0})-(r-\frac12\sigma^2)T}{\sigma\sqrt{T}}
 $$
 
-However, for problems where this optimal value cannot be derived analitically, other techniques must be used. The adaptive importance sampling technique that will be explored here is Cross-entropy. Theoretically, a distribution exists, such that variance is exaclty zero for the simulations of the model. Cross-entropy simplifies the problem by restricting it to the family $N(\mu,1),\mu\in\mathbb{R}$, and choosing the closest (according to Kullback-Liebler divergence) element from that familiy. The Kullback-Liebler divergence between a true probability distribution $P$ and a distribution $Q$ is defined as:
+However, for problems where this optimal value cannot be derived analitically, other techniques must be used. The adaptive importance sampling technique that will be explored here is Cross-entropy. Theoretically, a distribution exists, such that variance is exactly zero for the simulations of the model. Cross-entropy simplifies the problem by restricting it to the family $N(\mu,1),\mu\in\mathbb{R}$, and choosing the closest (according to Kullback-Liebler divergence) element from that familiy. The Kullback-Liebler divergence between a true probability distribution $P$ and a distribution $Q$ is defined as:
 
 $$
 D_{KL}(P||Q)=\sum_{x\in X}P(x)\log\frac{P(x)}{Q(x)}
@@ -393,7 +393,7 @@ In this repository's implementation, a damping factor is added to mitigate possi
 \chapter{Path dependent options}
 \section{Monte Carlo implementation}
 
-extremely deep and complex. It aims, however, to provide some basic insight on the paradigm changes and structural adaptations needed to move onto path dependent options. The standard Black Scholes assumes, among others, constant volatility. Thus, a single random value can be generated for each sample. In the following methods, volatility will not be constant, but rather follow a stochastic process given by
+This section focuses on path dependent options, which refers to options where the evolution of the stock price has to be computed. This section isn't by no means exhaustive, as this topic is extremely deep and complex. It aims, however, to provide some basic insight on the paradigm changes and structural adaptations needed to move onto path dependent options. The standard Black Scholes assumes, among others, constant volatility. Thus, a single random value can be generated for each sample. In the following methods, volatility will not be constant, but rather follow a stochastic process given by
 
 $$
 \sigma =  \rho  Z + \sqrt{1 - \rho^2} · U,\quad \rho\in[0,1],\quad Z,U\thicksim N(0,1)
@@ -401,7 +401,7 @@ $$
 
 with $Z$ being the stochastic variable that models price changes. The main drawback of path dependent options is the increase in computational cost, due to there being an extra dimension. For $n$ samples and $e$ experiments, the cost of a Monte Carlo Black Scholes computation is $\mathcal O(n·e)$, however, for a path dependent option using $t$ timesteps, the computational cost will be roughly $\mathcal O(n·e·t)$. Thus, variance reduction techniques gain importance, as they can provide similar levels of accuracy with much smaller sample sizes, speeding up computation.
 
-This path dependent model is implemented using Monte Carlo simulation as a baseline, as \texttt{path\_dependent\_mc(S0, K, T, r, rho, timesteps, n, exp}. When compared to the regular Monte Carlo Black Scholes implementation, it can be noted that variance is much higher, due to the added randomness of volatility following a stochastic process. The assymptotic rate, however, is the same.
+This path dependent model is implemented using Monte Carlo simulation as a baseline, as \texttt{path\_dependent\_mc(S0, K, T, r, rho, timesteps, n, exp)}. When compared to the regular Monte Carlo Black Scholes implementation, it can be noted that variance is much higher, due to the added randomness of volatility following a stochastic process. The assymptotic rate, however, is the same.
 
 \begin{figure}[H]
 \centering
