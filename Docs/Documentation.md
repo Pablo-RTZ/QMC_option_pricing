@@ -314,9 +314,7 @@ $$
 Using this value, the conditional expectation proxy is calculated. This way, an estimate $Y$ that is structurally similar to X, much less noisy and strongly correlated with $X$ is obtained. This way, the final estimator is:
 
 $$
-\hat{X}
-=
-\frac{1}{n}\sum (X_i - \beta(Y_i - \bar{Y}))
+\hat{X} = \frac{1}{n}\sum (X_i - \beta(Y_i - \bar{Y}))
 $$
 
 where:
